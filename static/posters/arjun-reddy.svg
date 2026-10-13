@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600" role="img" aria-label="Arjun Reddy poster">
+  <defs>
+    <linearGradient id="g40067" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="hsl(215,65%,38%)"/>
+      <stop offset="1" stop-color="hsl(283,70%,12%)"/>
+    </linearGradient>
+    <linearGradient id="g40067f" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g40067)"/>
+  <circle cx="333" cy="193" r="159" fill="hsl(215,80%,70%)" opacity="0.22"/>
+  <circle cx="234" cy="343" r="79" fill="hsl(283,80%,65%)" opacity="0.18"/>
+  <path d="M-20 520 L140 380 L240 470 L330 350 L420 430 L420 620 L-20 620 Z" fill="#000" opacity="0.28"/>
+  <rect width="400" height="600" fill="url(#g40067f)"/>
+  <rect x="14" y="14" width="372" height="572" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="200" y="100" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#fff" fill-opacity="0.75" letter-spacing="4">MANA CINEMA</text>
+  <text text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="36" fill="#fff"><tspan x="200" y="330">ARJUN REDDY</tspan></text>
+  <line x1="150" y1="505" x2="250" y2="505" stroke="#fff" stroke-opacity="0.5"/>
+  <text x="200" y="530" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#fff" fill-opacity="0.9">Drama / Romance</text>
+  <text x="200" y="554" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#fff" fill-opacity="0.65">Dir. Sandeep Reddy Vanga</text>
+</svg>

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101010">
+    <title>Mana Cinema | Discover Tollywood</title>
+
+    <style>
+        :root {
+            --bg: #101010;
+            --surface: #1c1c1c;
+            --gold: #e9b65b;
+            --text: #fff8ed;
+            --muted: #b3b3b3;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        button, select { font: inherit; }
+        button, a, select { -webkit-tap-highlight-color: transparent; }
+
+        a:focus-visible, button:focus-visible, select:focus-visible,
+        .movie-card:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 3px;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 16px 5%;
+            background: rgba(12, 12, 12, .96);
+            border-bottom: 1px solid #292929;
+            backdrop-filter: blur(14px);
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: 950;
+            letter-spacing: 2px;
+            color: var(--gold);
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .brand span { color: white; }
+
+        .nav-links {
+            display: flex;
+            gap: 23px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .nav-links a:hover { color: var(--gold); }
+
+        .nav-pill {
+            border: 1px solid #72542e;
+            color: var(--gold);
+            padding: 8px 12px;
+            border-radius: 25px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        /* ---------- Hero ---------- */
+        .hero {
+            min-height: 440px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background:
+                linear-gradient(90deg, #101010 0%, #101010ed 35%, #10101066 70%, #10101080 100%),
+                linear-gradient(0deg, #101010 0%, transparent 35%),
+                url("{{ url_for('static', filename='posters/hero.jpg') }}") center 28% / cover no-repeat,
+                url("{{ url_for('static', filename='posters/hero.svg') }}") center 28% / cover no-repeat,
+                #101010;
+            border-bottom: 1px solid #262626;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            width: min(650px, 90%);
+            padding: 65px 0;
+            margin-left: 7%;
+        }
+
+        .eyebrow {
+            color: var(--gold);
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: clamp(44px, 7vw, 76px);
+            letter-spacing: -2px;
+            line-height: .99;
+            margin: 19px 0;
+        }
+
+        .hero h1 span { color: var(--gold); }
+
+        .hero p {
+            max-width: 510px;
+            color: #d1ccc6;
+            font-size: 15px;
+            line-height: 1.85;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 26px;
+        }
+
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            min-height: 45px;
+            padding: 12px 19px;
+            border: 0;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .btn-gold { background: var(--gold); color: #17110a; }
+        .btn-gold:hover { background: #ffd58a; }
+
+        .btn-light {
+            background: rgba(255,255,255,.13);
+            color: white;
+            border: 1px solid #ffffff35;
+        }
+
+        .btn-light:hover { background: rgba(255,255,255,.23); }
+
+        /* ---------- Layout ---------- */
+        .main {
+            width: 90%;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 32px 0 65px;
+        }
+
+        .section {
+            margin-bottom: 44px;
+            scroll-margin-top: 85px;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 17px;
+        }
+
+        .section-heading h2 { font-size: 23px; margin: 0 0 6px; }
+        .section-heading p { color: var(--muted); font-size: 12px; margin: 0; }
+
+        .gold-line {
+            display: block;
+            width: 35px;
+            height: 3px;
+            margin-top: 11px;
+            background: var(--gold);
+            border-radius: 5px;
+        }
+
+        /* ---------- Movie cards ---------- */
+        .movie-row {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: 165px;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 3px 2px 17px;
+            scroll-snap-type: x mandatory;
+            scrollbar-color: #59462c #1c1c1c;
+            scrollbar-width: thin;
+        }
+
+        .movie-card {
+            min-width: 0;
+            margin: 0;
+            scroll-snap-align: start;
+            cursor: pointer;
+            border-radius: 9px;
+            overflow: hidden;
+            background: #1c1c1c;
+            transition: transform .22s ease, box-shadow .22s ease;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px #0009;
+        }
+
+        .poster {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse at top, #805222, transparent 60%),
+                linear-gradient(150deg, #282016, #101010 75%);
+        }
+
+        .poster img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .4s ease;
+        }
+
+        .movie-card:hover .poster img { transform: scale(1.06); }
+
+        .poster-placeholder {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 14px;
+            background:
+                radial-gradient(ellipse at 50% 25%, #6f4b2380, transparent 60%),
+                linear-gradient(160deg, #282016, #101010);
+        }
+
+        .poster.no-image .poster-placeholder { display: flex; }
+
+        .poster-placeholder .symbol { font-size: 29px; color: var(--gold); margin-bottom: 20px; }
+
+        .poster-placeholder .poster-title {
+            font-size: 17px;
+            line-height: 1.25;
+            font-weight: 900;
+            text-transform: uppercase;
+            overflow-wrap: anywhere;
+        }
+
+        .poster-placeholder small {
+            margin-top: 14px;
+            color: var(--gold);
+            font-size: 9px;
+            letter-spacing: 2px;
+        }
+
+        .poster-overlay {
+            position: absolute;
+            inset: 62% 0 0;
+            background: linear-gradient(transparent, #000e);
+            pointer-events: none;
+        }
+
+        .poster-badge {
+            position: absolute;
+            top: 9px;
+            left: 9px;
+            background: #e9b65b;
+            color: #18120a;
+            font-weight: 900;
+            font-size: 9px;
+            padding: 5px 7px;
+            border-radius: 3px;
+            letter-spacing: .7px;
+        }
+
+        .movie-info { padding: 12px 11px 14px; }
+
+        .movie-info h3 {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.45;
+            color: white;
+            overflow-wrap: anywhere;
+        }
+
+        .movie-info p {
+            color: #a8a8a8;
+            margin: 6px 0 0;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        /* ---------- Form ---------- */
+        .form-panel {
+            padding: 27px;
+            border: 1px solid #34302a;
+            background: linear-gradient(140deg, #201c17, #171717);
+            border-radius: 13px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--gold);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .6px;
+        }
+
+        select {
+            width: 100%;
+            padding: 13px;
+            color: white;
+            background: #101010;
+            border: 1px solid #514331;
+            border-radius: 7px;
+            outline: none;
+        }
+
+        select:focus { border-color: var(--gold); }
+        .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+
+        .chip { cursor: pointer; margin: 0; }
+        .chip input { position: absolute; opacity: 0; pointer-events: none; }
+
+        .chip span {
+            display: inline-block;
+            padding: 9px 15px;
+            border: 1px solid #514331;
+            border-radius: 25px;
+            background: #101010;
+            color: #d6cfc4;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0;
+            transition: .18s ease;
+        }
+
+        .chip:hover span { border-color: var(--gold); color: white; }
+
+        .chip input:checked + span {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: #17110a;
+        }
+
+        .chip input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+        .liked {
+            display: inline-block;
+            margin-top: 6px;
+            color: var(--gold);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .hint {
+            color: #a8a29b;
+            font-size: 11px;
+            line-height: 1.7;
+            margin-top: 8px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 23px;
+        }
+
+        .reset-link {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 20px;
+            border: 1px solid #514331;
+            border-radius: 6px;
+            text-decoration: none;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .reset-link:hover { border-color: var(--gold); color: var(--gold); }
+
+        .error {
+            padding: 14px;
+            margin-top: 18px;
+            color: #ffd0c8;
+            background: #48221d;
+            border: 1px solid #794036;
+            border-radius: 7px;
+            overflow-wrap: anywhere;
+        }
+
+        /* ---------- Results ---------- */
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .recommendations .movie-card { width: 100%; cursor: default; }
+
+        .similarity {
+            display: inline-block;
+            color: #b6e4a7;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+
+        .match-bar {
+            height: 3px;
+            margin-top: 7px;
+            background: #2c2c2c;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .match-bar i {
+            display: block;
+            width: 0;
+            height: 100%;
+            background: var(--gold);
+        }
+
+        .empty {
+            padding: 28px;
+            background: var(--surface);
+            color: var(--muted);
+            border-radius: 9px;
+            line-height: 1.8;
+        }
+
+        .footer {
+            padding: 28px 5%;
+            text-align: center;
+            border-top: 1px solid #292929;
+            color: #898989;
+            font-size: 11px;
+            line-height: 2;
+        }
+
+        .footer strong { color: var(--gold); }
+
+        @media (max-width: 1000px) {
+            .recommendations { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .movie-row { grid-auto-columns: 145px; }
+        }
+
+        @media (max-width: 650px) {
+            .navbar { padding: 14px 5%; }
+            .brand { font-size: 20px; }
+            .nav-links { gap: 12px; }
+            .nav-links a { font-size: 11px; }
+            .nav-pill { display: none; }
+
+            .hero { min-height: 390px; }
+            .hero-content { margin-left: 6%; padding: 48px 0; }
+            .hero h1 { font-size: 48px; }
+
+            .main { width: 92%; padding-top: 25px; }
+            .movie-row { grid-auto-columns: 135px; gap: 11px; }
+
+            .form-panel { padding: 20px 16px; }
+            .form-grid { grid-template-columns: 1fr; gap: 20px; }
+            .form-actions { flex-direction: column; }
+            .form-actions .btn, .reset-link { width: 100%; }
+
+            .recommendations { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+            .section-heading h2 { font-size: 20px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    {# Posters live in static/posters/. The page tries the real <name>.jpg first
+       (run fetch_posters.py), then the generated <name>.svg, then a placeholder. #}
+
+    {% set posters = {
+        'RRR': 'rrr',
+        'Baahubali The Beginning': 'baahubali-the-beginning',
+        'Baahubali 2 The Conclusion': 'baahubali-2-the-conclusion',
+        'Pushpa The Rise': 'pushpa-the-rise',
+        'Pushpa 2 The Rule': 'pushpa-2-the-rule',
+        'Ala Vaikunthapurramuloo': 'ala-vaikunthapurramuloo',
+        'Arjun Reddy': 'arjun-reddy',
+        'Geetha Govindam': 'geetha-govindam',
+        'Rangasthalam': 'rangasthalam',
+        'Magadheera': 'magadheera',
+        'Eega': 'eega',
+        'Jersey': 'jersey',
+        'Mahanati': 'mahanati',
+        'Sita Ramam': 'sita-ramam',
+        'Hi Nanna': 'hi-nanna',
+        'Salaar Part 1 Ceasefire': 'salaar-part-1-ceasefire',
+        'Kalki 2898 AD': 'kalki-2898-ad',
+        'Devara Part 1': 'devara-part-1',
+        'Pokiri': 'pokiri',
+        'Businessman': 'businessman',
+        'Athadu': 'athadu',
+        'Srimanthudu': 'srimanthudu',
+        'Oopiri': 'oopiri',
+        'Fidaa': 'fidaa',
+        'Bommarillu': 'bommarillu',
+        'Manam': 'manam',
+        'Dasara': 'dasara',
+        'Hanu-Man': 'hanu-man',
+        'DJ Tillu': 'dj-tillu',
+        'Nuvvostanante Nenoddantana': 'nuvvostanante-nenoddantana',
+        'Leader': 'leader'
+    } %}
+
+    <nav class="navbar">
+        <a href="/" class="brand">MANA <span>CINEMA</span></a>
+
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#browse">Browse</a>
+            <a href="#recommend">Discover</a>
+        </div>
+
+        <div class="nav-pill">TELUGU CINEMA</div>
+    </nav>
+
+    <header class="hero" id="home">
+        <div class="hero-content">
+            <div class="eyebrow">Made for Telugu movie lovers</div>
+
+            <h1>Stories that<br><span>stay with you.</span></h1>
+
+            <p>
+                Find a Telugu film you will love.
+                Explore unforgettable characters, powerful stories,
+                mass action and timeless romance.
+            </p>
+
+            <div class="hero-actions">
+                <a href="#recommend" class="btn btn-gold">▶ &nbsp; Discover Movies</a>
+                <a href="#browse" class="btn btn-light">Explore Collection</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+
+        <!-- ================= BROWSE ================= -->
+        <section class="section" id="browse">
+            <div class="section-heading">
+                <div>
+                    <h2>Popular in Tollywood</h2>
+                    <p>Click any poster to get similar movies</p>
+                    <span class="gold-line"></span>
+                </div>
+            </div>
+
+            <div class="movie-row">
+                {% for title in movies %}
+                    <form class="movie-card"
+                          method="POST"
+                          action="/#results"
+                          tabindex="0"
+                          role="button"
+                          title="Get recommendations for {{ title }}">
+
+                        <input type="hidden" name="movie" value="{{ title }}">
+
+                        <div class="poster{% if not posters.get(title) %} no-image{% endif %}">
+                            {% if posters.get(title) %}
+                                <img
+                                    src="{{ url_for('static', filename='posters/' ~ posters.get(title) ~ '.jpg') }}"
+                                    data-fallback="{{ url_for('static', filename='posters/' ~ posters.get(title) ~ '.svg') }}"
+                                    alt="{{ title }} movie poster"
+                                    loading="lazy">
+                            {% endif %}
+
+                            <div class="poster-placeholder">
+                                <div class="symbol">✦</div>
+                                <div class="poster-title">{{ title }}</div>
+                                <small>MANA CINEMA</small>
+                            </div>
+
+                            <div class="poster-overlay"></div>
+                            <span class="poster-badge">TELUGU</span>
+                        </div>
+
+                        <div class="movie-info">
+                            <h3>{{ title }}</h3>
+                            <p>Pick this movie to find something similar</p>
+                        </div>
+                    </form>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- ================= RECOMMEND FORM ================= -->
+        <section class="section" id="recommend">
+            <div class="section-heading">
+                <div>
+                    <h2>Find your next favourite</h2>
+                    <p>Movie picks based on what you enjoy</p>
+                    <span class="gold-line"></span>
+                </div>
+            </div>
+
+            <div class="form-panel">
+                <form method="POST" action="/#results">
+
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="movie">01 / CHOOSE A MOVIE (OPTIONAL)</label>
+
+                            <select id="movie" name="movie">
+                                <option value="" {% if not selected_movie %}selected{% endif %}>
+                                    No movie - use genres only
+                                </option>
+
+                                {% for title in movies %}
+                                    <option value="{{ title }}" {% if selected_movie == title %}selected{% endif %}>
+                                        {{ title }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
+                            <p class="hint">Pick a movie you love, or skip it and choose genres only.</p>
+                        </div>
+
+                        <div class="field">
+                            <label>02 / PREFERRED GENRES</label>
+
+                            <div class="chips" id="genres" role="group" aria-label="Preferred genres">
+                                {% for genre in genres %}
+                                    <label class="chip">
+                                        <input type="checkbox" name="genres" value="{{ genre }}"
+                                            {% if genre in selected_genres %}checked{% endif %}>
+                                        <span>{{ genre }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+
+                            <p class="hint">
+                                Tap one or more genres. With a movie, matching genres rank higher; without one, you get movies in those genres.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-gold">
+                            ✦ &nbsp; Find Recommendations
+                        </button>
+
+                        <a href="/" class="reset-link">Reset</a>
+                    </div>
+                </form>
+
+                {% if error %}
+                    <div class="error">
+                        <strong>Something went wrong:</strong> {{ error }}
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- ================= RESULTS ================= -->
+        {% if request.method == 'POST' %}
+            <section class="section" id="results">
+                <div class="section-heading">
+                    <div>
+                        <h2>Picked for you</h2>
+                        {% if selected_movie %}
+                            <p>Since you picked {{ selected_movie }}{% if selected_genres %} + {{ selected_genres | join(', ') }}{% endif %}</p>
+                        {% else %}
+                            <p>Movies in: {{ selected_genres | join(', ') }}</p>
+                        {% endif %}
+                        <span class="gold-line"></span>
+                    </div>
+                </div>
+
+                {% if recommendations %}
+                    <div class="recommendations">
+                        {% for movie in recommendations %}
+                            {% if movie.match_count is defined %}
+                                {% set pct = (movie.match_count * 100 / movie.genre_total) | round(0) | int %}
+                            {% else %}
+                                {% set pct = [ [ (movie.score * 100) | round(0) | int, 0 ] | max, 100 ] | min %}
+                            {% endif %}
+                            <article class="movie-card">
+                                <div class="poster{% if not posters.get(movie.title) %} no-image{% endif %}">
+                                    {% if posters.get(movie.title) %}
+                                        <img
+                                            src="{{ url_for('static', filename='posters/' ~ posters.get(movie.title) ~ '.jpg') }}"
+                                            data-fallback="{{ url_for('static', filename='posters/' ~ posters.get(movie.title) ~ '.svg') }}"
+                                            alt="{{ movie.title }} poster"
+                                            loading="lazy">
+                                    {% endif %}
+
+                                    <div class="poster-placeholder">
+                                        <div class="symbol">✦</div>
+                                        <div class="poster-title">{{ movie.title }}</div>
+                                        <small>MANA CINEMA</small>
+                                    </div>
+
+                                    <div class="poster-overlay"></div>
+                                    <span class="poster-badge">FOR YOU</span>
+                                </div>
+
+                                <div class="movie-info">
+                                    <h3>{{ movie.title }}</h3>
+                                    <p>{{ movie.genres }}</p>
+                                    <p>Director: {{ movie.director or 'Not available' }}</p>
+                                    {% if movie.matched_genres %}
+                                        <span class="liked">✦ Matches your genres: {{ movie.matched_genres | join(', ') }}</span><br>
+                                    {% endif %}
+                                    <span class="similarity">
+                                        {% if movie.match_count is defined %}
+                                            Matches {{ movie.match_count }} of {{ movie.genre_total }} selected genres
+                                        {% else %}
+                                            Similarity score: {{ "%.3f"|format(movie.score) }}
+                                        {% endif %}
+                                    </span>
+                                    <div class="match-bar" aria-hidden="true"><i data-pct="{{ pct }}"></i></div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty">
+                        We could not find a match this time — try another movie.
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </main>
+
+    <footer class="footer">
+        <strong>MANA CINEMA</strong><br>
+        Find your next favourite in Telugu cinema<br>
+        Python · Flask · TF-IDF · Cosine Similarity<br>
+        Movie posters courtesy of TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
+    </footer>
+
+    <script>
+        // Poster fallback: real .jpg -> generated .svg -> styled placeholder.
+        document.querySelectorAll(".poster img").forEach(function (img) {
+            function onFail() {
+                var next = img.dataset.fallback;
+                if (next) {
+                    img.removeAttribute("data-fallback");
+                    img.src = next;
+                } else {
+                    img.style.display = "none";
+                    img.parentElement.classList.add("no-image");
+                }
+            }
+            img.addEventListener("error", onFail);
+            if (img.complete && img.naturalWidth === 0) onFail();
+        });
+
+        // Fill the match bars.
+        document.querySelectorAll(".match-bar i[data-pct]").forEach(function (bar) {
+            bar.style.width = bar.dataset.pct + "%";
+        });
+
+        // Poster cards in "Popular in Tollywood": click or press Enter/Space to submit.
+        document.querySelectorAll("form.movie-card").forEach(function (card) {
+            card.addEventListener("click", function () { card.submit(); });
+            card.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    card.submit();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
