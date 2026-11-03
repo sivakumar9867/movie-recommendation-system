@@ -1,151 +1,199 @@
-# Mana Cinema — Telugu Film Club
+# MANA CINEMA — Telugu Film Club
 
-<p align="center">
-  <strong>Discover Telugu cinema. Find your next favourite story.</strong><br>
-  A Flask-powered Telugu movie discovery and recommendation application featuring a curated catalogue of 500 films.
-</p>
+A Flask-based Telugu movie discovery and recommendation platform featuring a catalogue of 500 Telugu films.
 
-<p align="center">
-  <img src="screenshots/homepage-hero.png" alt="Mana Cinema homepage" width="900">
-</p>
+Discover movies, explore films by your favourite heroes, browse the Pawan Kalyan collection, and find your next favourite Telugu story through content-based recommendations.
 
-## About the Project
+**500 Films. Local Posters. Personalized Discoveries.**
 
-**Mana Cinema** is a content-based Telugu movie discovery platform built with Python, Flask, Pandas and Scikit-learn. It brings together a 500-film catalogue, locally stored posters, actor-based browsing and personalized recommendations in an editorial-style interface.
+---
 
-## Key Features
+## Preview
 
-- **500 Telugu Films:** Explore a catalogue of 500 Telugu movies.
-- **Local Movie Posters:** All posters are stored locally in `static/posters/`.
-- **Browse by Hero:** Discover films based on your favourite actors.
-- **Pawan Kalyan Fan Shelf:** A dedicated collection featuring 12 films.
-- **Movie Recommendations:** Discover similar movies based on content.
-- **Genre-Based Discovery:** Find movies by selecting your preferred genres.
-- **Combined Recommendations:** Combine movie selection with genre preferences.
-- **Responsive Interface:** Clean and engaging movie discovery experience.
+### 01. Homepage
 
-## Screenshots
+Discover Telugu cinema through an editorial-style homepage featuring Ram Charan, Pawan Kalyan and Prabhas.
 
-### 1. Homepage
+![Mana Cinema - Homepage](screenshots/homepage-hero.png)
 
-The homepage features a three-star showcase with Ram Charan, Pawan Kalyan and Prabhas.
+### 02. Pawan Kalyan Fan Shelf
 
-![Mana Cinema Homepage](screenshots/homepage-hero.png)
+Explore a dedicated collection of 12 Pawan Kalyan films.
 
-### 2. Pawan Kalyan Fan Shelf
+![Mana Cinema - Pawan Kalyan Fan Shelf](screenshots/pawan-kalyan-fan-shelf.png)
 
-![Pawan Kalyan Fan Shelf](screenshots/pawan-kalyan-fan-shelf.png)
+### 03. Browse by Hero
 
-### 3. Browse by Hero
+Explore movies based on your favourite Telugu film actors.
 
-![Browse by Hero](screenshots/browse-by-hero.png)
+![Mana Cinema - Browse by Hero](screenshots/browse-by-hero.png)
 
-### 4. Find a Film
+### 04. Find a Film
 
-![Find a Film](screenshots/find-a-film.png)
+Search and explore titles from the 500-film catalogue.
 
-### 5. Mood-Based Discovery
+![Mana Cinema - Find a Film](screenshots/find-a-film.png)
 
-![Mood-Based Discovery](screenshots/mood-based-discovery.png)
+### 05. Mood-Based Discovery
 
-### 6. Movie Recommendations
+Discover movies using your preferred genres and movie preferences.
 
-**Recommendations for Arjun Reddy**
+![Mana Cinema - Mood-Based Discovery](screenshots/mood-based-discovery.png)
 
-![Recommendations for Arjun Reddy](screenshots/recommendations-arjun-reddy.png)
+### 06. Movie Recommendations
 
-**Personalized Movie Picks**
+Get similar movie suggestions based on your selected title.
 
-![Personalized Picks](screenshots/recommendations-personalized-picks.png)
+![Mana Cinema - Arjun Reddy Recommendations](screenshots/recommendations-arjun-reddy.png)
 
-**Couple Friendly Recommendations**
+### 07. Personalized Picks
 
-![Couple Friendly Recommendations](screenshots/recommendations-couple-friendly.png)
+Explore additional recommendations based on your movie preferences.
 
-**More Recommended Films**
+![Mana Cinema - Personalized Picks](screenshots/recommendations-personalized-picks.png)
 
-![More Recommended Films](screenshots/recommendations-more-films.png)
+### 08. Couple Friendly Recommendations
+
+![Mana Cinema - Couple Friendly Recommendations](screenshots/recommendations-couple-friendly.png)
+
+### 09. More Movie Recommendations
+
+![Mana Cinema - More Recommendations](screenshots/recommendations-more-films.png)
+
+---
+
+## Features
+
+- **500-Movie Catalogue:** Explore a collection of 500 Telugu films.
+- **Local Poster Library:** Movie posters are stored locally, allowing the application to run without making poster requests to an external API.
+- **Hero-Based Browsing:** Discover movies through your favourite actors.
+- **Pawan Kalyan Fan Shelf:** Dedicated collection featuring 12 films.
+- **Featured Homepage:** Three-star showcase featuring Ram Charan, Pawan Kalyan and Prabhas.
+- **Movie-Based Recommendations:** Find similar films using content similarity.
+- **Genre-Based Discovery:** Explore movies by selecting one or more genres.
+- **Combined Recommendations:** Combine a selected movie with preferred genres to influence recommendation ranking.
+- **Generated Poster Artwork:** Local SVG poster artwork is available for catalogue titles through the application's poster-art route.
+- **Responsive Interface:** Designed for an engaging movie discovery experience.
+
+## Recommendation Workflow
+
+Mana Cinema uses a content-based filtering approach to recommend Telugu movies.
+
+```mermaid
+flowchart TD
+    A["500 Telugu Movie Catalogue"] --> B["Movie Information"]
+    B --> C["Genres, Synopsis, Director and Cast"]
+    C --> D["Text Feature Extraction"]
+    D --> E["TF-IDF Vectorization"]
+    E --> F["Cosine Similarity"]
+    F --> G["Movie-Based Recommendations"]
+    F --> H["Genre-Based Ranking"]
+    G --> I["Combined Recommendation Ranking"]
+    H --> I
+    I --> J["Display Recommended Movies"]
+```
+
+### Recommendation Methods
+
+**1. Movie-Based Recommendations**
+
+- Select a movie from the catalogue.
+- Extract its content features.
+- Calculate similarity with other movies.
+- Rank and display the top six recommendations.
+
+**2. Genre-Based Recommendations**
+
+- Select one or more preferred genres.
+- Identify movies matching the selected genres.
+- Rank movies based on genre coverage and overlap.
+- Display the top recommendations.
+
+**3. Combined Recommendations**
+
+- Select a movie and preferred genres.
+- Calculate movie similarity.
+- Apply an additional ranking boost for matching genres.
+- Display recommendations using the combined ranking.
 
 ## Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| Python | Application logic |
-| Flask | Web framework |
+| Python | Backend programming |
+| Flask | Web application framework |
 | Pandas | Movie catalogue processing |
-| Scikit-learn | Recommendation engine |
-| TF-IDF | Text feature extraction |
+| Scikit-learn | Machine learning and recommendation engine |
+| TF-IDF Vectorizer | Text feature extraction |
 | Cosine Similarity | Movie similarity calculation |
-| HTML | Webpage structure |
-| CSS | User interface and styling |
+| HTML5 | Webpage structure |
+| CSS3 | Styling and responsive interface |
 | TMDB API | Optional catalogue and poster updates |
 
-## Recommendation System
+## Getting Started
 
-Mana Cinema uses a content-based recommendation approach.
+### Prerequisites
 
-Movie information such as genres, synopsis, director and cast is combined into text features.
-
-1. **TF-IDF Vectorization:** Converts movie descriptions into numerical feature vectors.
-2. **Cosine Similarity:** Measures similarity between movies.
-3. **Movie-Based Recommendations:** Finds movies similar to the selected title.
-4. **Genre-Based Recommendations:** Suggests movies matching selected genres.
-5. **Combined Recommendations:** Uses movie similarity and selected genre preferences to improve results.
-
-## Installation and Setup
-
-### Requirements
-
-- Python 3.10 or later
-- pip
+- Python 3.10 or newer
+- pip package manager
+- A modern web browser
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/sivakumar9867/movie-recommendation-system.git
+```
+
+### 2. Navigate to the Project Folder
+
+```bash
 cd movie-recommendation-system
 ```
 
-### 2. Create a Virtual Environment
+### 3. Create a Virtual Environment
 
-**Windows PowerShell**
+**Windows:**
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\Scripts\activate
 ```
 
-**Linux / macOS**
+**macOS / Linux:**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 4. Install Dependencies
 
 ```bash
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-### 4. Run the Application
+### 5. Run the Application
 
 ```bash
 python app.py
 ```
 
-Open your browser and visit:
+### 6. Open in Browser
 
+Visit:
+
+```text
 http://127.0.0.1:5000
+```
 
-**Note:** The bundled movie catalogue and locally stored posters are included in the repository. A TMDB API token is not required for normal application usage.
+**Note:** The bundled movie catalogue and local posters are included in the repository. A TMDB API token is not required for normal application usage.
 
 ## Running Tests
 
 Install development dependencies:
 
 ```bash
-python -m pip install -r requirements-dev.txt
+pip install -r requirements-dev.txt
 ```
 
 Run the test suite:
@@ -154,15 +202,19 @@ Run the test suite:
 python -m pytest -q
 ```
 
+The test suite covers catalogue validation, the Pawan Kalyan collection, movie recommendations, genre filtering, combined recommendations and title slug generation.
+
 ## Optional Catalogue Refresh
 
-To refresh the movie catalogue or download additional posters:
+The project includes scripts for synchronizing catalogue data and downloading verified posters.
+
+To use TMDB for optional catalogue updates:
 
 1. Copy `.env.example` to `.env`.
-2. Add your TMDB API Read Access Token to `TMDB_READ_ACCESS_TOKEN`.
-3. Run the relevant scripts from the `scripts/` directory.
+2. Add your TMDB API Read Access Token.
+3. Run the relevant scripts in the `scripts/` directory.
 
-**Important:** Never upload or share your `.env` file or API token. The `.env` file is excluded through `.gitignore`.
+Keep `.env` private. Never commit your API token to GitHub.
 
 ## Project Structure
 
@@ -170,6 +222,8 @@ To refresh the movie catalogue or download additional posters:
 movie-recommendation-system/
 │
 ├── app.py
+├── requirements.txt
+├── requirements-dev.txt
 │
 ├── data/
 │   └── movies.csv
@@ -178,20 +232,24 @@ movie-recommendation-system/
 │   ├── sync_verified_telugu_catalog.py
 │   └── download_verified_posters.py
 │
+├── templates/
+│   └── index.html
+│
+├── static/
+│   ├── style.css
+│   └── posters/
+│       └── 500 local poster images
+│
 ├── screenshots/
 │   ├── homepage-hero.png
 │   ├── pawan-kalyan-fan-shelf.png
 │   ├── browse-by-hero.png
 │   ├── find-a-film.png
 │   ├── mood-based-discovery.png
-│   └── recommendations-*.png
-│
-├── static/
-│   ├── style.css
-│   └── posters/
-│
-├── templates/
-│   └── index.html
+│   ├── recommendations-arjun-reddy.png
+│   ├── recommendations-personalized-picks.png
+│   ├── recommendations-couple-friendly.png
+│   └── recommendations-more-films.png
 │
 ├── tests/
 │   └── test_recommender.py
@@ -199,23 +257,49 @@ movie-recommendation-system/
 ├── .env.example
 ├── .gitignore
 ├── LICENSE
-├── README.md
-├── requirements.txt
-└── requirements-dev.txt
+└── README.md
 ```
+
+## Learning Outcomes
+
+Through this project, I explored and practised:
+
+- Building a full-stack web application using Python and Flask.
+- Working with structured movie datasets using Pandas.
+- Implementing content-based recommendation systems.
+- Understanding TF-IDF vectorization and cosine similarity.
+- Extracting useful features from movie descriptions and metadata.
+- Implementing movie-based and genre-based recommendation methods.
+- Managing and serving locally stored movie posters.
+- Designing responsive user interfaces using HTML and CSS.
+- Writing automated tests using Pytest.
+- Managing project versions and documentation using Git and GitHub.
+
+## Future Improvements
+
+- Add user accounts and personalized watchlists.
+- Introduce movie ratings and feedback.
+- Improve recommendation quality with additional content features.
+- Add advanced search and filtering options.
+- Introduce language, year and rating-based filters.
+- Add movie details pages with richer information.
+- Explore collaborative filtering alongside content-based recommendations.
+- Deploy the application to a cloud platform.
 
 ## Poster and Data Rights
 
-All movie posters, promotional artwork and related visual materials remain the property of their respective copyright owners.
+Movie posters, promotional artwork and other third-party visual materials remain the property of their respective copyright owners.
 
-Their inclusion in this project does not transfer ownership or grant permission for commercial use, republication or redistribution. Please verify applicable rights and provider terms before reusing these assets.
-
-The source-code licence does not automatically apply to third-party movie artwork.
+Their inclusion in this project does not transfer ownership or grant permission for commercial use, republication or redistribution. The source-code licence does not automatically apply to third-party artwork.
 
 Mana Cinema is an independent student project and is not affiliated with TMDB, film studios, actors or other rights holders.
 
+## About the Project
+
+**Mana Cinema — Telugu Film Club** is an independent project built to explore Telugu cinema through movie discovery and content-based recommendation techniques.
+
+The project combines Python-based recommendation logic with a Flask web interface and a locally stored movie poster collection.
+
 ---
 
-<p align="center">
-  Made with ❤️ for Telugu Cinema
-</p>
+**Built with Python, Flask and ❤️ for Telugu Cinema.**
