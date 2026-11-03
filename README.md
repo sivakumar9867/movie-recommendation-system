@@ -1,123 +1,101 @@
 # Mana Cinema — Telugu Film Club
 
-Mana Cinema is a Flask-based Telugu movie discovery and recommendation app. It combines a content-based recommender with an editorial-style interface inspired by Telugu cinema culture, plus a dedicated Pawan Kalyan fan shelf.
+Mana Cinema is a Flask-based Telugu movie discovery and recommendation app. This version includes a catalogue of **500 Telugu films**, locally stored poster images, an editorial-style homepage, hero-based browsing, and a dedicated Pawan Kalyan fan shelf.
 
-## Preview
+## Homepage preview
 
-The landing-page poster stage now places **Rangasthalam** (Ram Charan) on the left, **Jalsa** (Pawan Kalyan) in the centre, and **Baahubali 2: The Conclusion** (Prabhas) on the right.
+The featured three-star poster stage presents **Rangasthalam** (Ram Charan), **Gabbar Singh** (Pawan Kalyan), and **Baahubali 2: The Conclusion** (Prabhas).
 
+The Pawan Kalyan shelf contains 12 films from the catalogue. Screenshots in `screenshots/` show the existing desktop, mobile, and fan-shelf previews.
 
-**Power Star shelf**
+## Features
 
-**Explore by Hero** — filter the catalogue by the lead actor, then combine that selection with title, actor or director search.
-
-![Pawan Kalyan movie collection](screenshots/power-star-preview.jpg)
-
-**Mobile layout**
-
-![Mana Cinema mobile interface](screenshots/mana-cinema-mobile-preview.jpg)
-
-## Highlights
-
-- Browse and search a curated collection of **35 Telugu films**.
-- Dedicated Pawan Kalyan collection featuring *Tholi Prema*, *Kushi*, *Jalsa*, *Gabbar Singh*, *Attarintiki Daredi* and *Bheemla Nayak*.
-- Get recommendations from a movie, selected genres, or a combination of both.
-- Movie posters use movie-specific image sources only; failed images are removed from the visible catalogue rather than replaced with generated artwork.
-- Responsive editorial interface with film shelves, live search, genre filters and recommendation cards.
+- Browse and search a 500-film Telugu catalogue.
+- Explore titles by lead actor using the hero filter.
+- Browse the Pawan Kalyan fan shelf.
+- Get content-based recommendations using movie genres, synopsis, director, and cast.
+- Discover films by selected genres or combine a selected movie with genre preferences.
+- Use locally stored poster files from `static/posters/`; the application does not need a TMDB token to run with the bundled catalogue.
+- Responsive homepage and movie browsing interface.
 
 ## Run locally
 
 Python 3.10 or later is recommended.
 
-```bash
-python -m venv .venv
-```
-
-Activate the environment:
+Create and activate a virtual environment:
 
 ```powershell
-# Windows PowerShell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
+Install dependencies and start the app:
 
-Install dependencies and start the application:
-
-```bash
+```powershell
 python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open **http://127.0.0.1:5000**.
+Open <http://127.0.0.1:5000> in your browser.
+
+On macOS or Linux, activate the virtual environment with:
+
+```bash
+source .venv/bin/activate
+```
 
 ## Recommendation approach
 
-Each movie is represented using its genres, synopsis, director and cast. `TfidfVectorizer` converts those text features into vectors, and cosine similarity ranks candidate films.
+The recommender combines each film's genres, synopsis, director, and cast into a text feature. `TfidfVectorizer` converts these features into vectors, and cosine similarity ranks related films.
 
-- **Movie mode:** recommends films with similar content features.
-- **Genre mode:** ranks films by selected-genre coverage and Jaccard overlap.
-- **Combined mode:** adds a small ranking boost for selected genres while displaying the raw cosine-similarity score separately.
+- **Movie recommendations:** rank films by content similarity to the selected title.
+- **Genre recommendations:** rank films by overlap with the selected genres.
+- **Combined recommendations:** apply a small ranking boost for selected genres while retaining the raw similarity score.
 
 ## Project structure
 
 ```text
-Mana-Cinema/
+Mana-Movie/
 ├── app.py
 ├── requirements.txt
 ├── data/
 │   └── movies.csv
+├── static/
+│   ├── style.css
+│   └── posters/          # 500 locally stored poster images
 ├── templates/
 │   └── index.html
-├── static/
-│   └── style.css
+├── scripts/
+│   ├── sync_verified_telugu_catalog.py
+│   └── download_verified_posters.py
 ├── screenshots/
-│   ├── mana-cinema-preview.jpg
-│   ├── power-star-preview.jpg
-│   └── mana-cinema-mobile-preview.jpg
 ├── tests/
 │   └── test_recommender.py
 ├── requirements-dev.txt
+├── .env.example
 ├── .gitignore
 └── LICENSE
 ```
 
-## Poster image notes
-
-Mana Cinema uses movie-specific poster URLs. The browser tries the primary URL and, when supplied, one alternate URL. If both fail, the affected movie card or hero-stage poster is hidden; no generated, generic, repeated or dubbed-language substitute is displayed. External image hosts can change availability, so the catalogue sync checks every poster URL and the browser performs a final runtime check.
-
-Poster artwork remains the property of its respective rights holders. This is an independent student project and is not affiliated with the actors, studios, image hosts or rights holders. For public or commercial deployment, use posters that you have licensed or have permission to display.
-
 ## Tests
 
-Install the optional development dependency and run:
+Install development dependencies and run the test suite:
 
-```bash
+```powershell
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-The dataset is manually curated and is not intended to be a complete Telugu film database.
+The current test suite checks the 500-title catalogue, local poster files, the Pawan Kalyan shelf, recommendation behaviour, genre filtering, and title slug generation.
 
+## Optional catalogue refresh
 
-## Poster availability policy
+The bundled catalogue and local posters are already included, so a TMDB token is **not required** to run the application.
 
-The catalogue currently contains 35 films with at least one poster image source recorded. Films without a poster source (including Magadheera and Mahanati in this revision) are excluded rather than shown with generated artwork. In the browser, a failed primary image gets one alternate-source attempt; if that also fails, the affected movie card is removed. External image hosts can change availability, so this runtime check is intentional.
+To refresh or regenerate catalogue data, copy `.env.example` to `.env` and add a TMDB API Read Access Token to `TMDB_READ_ACCESS_TOKEN`. Then run the relevant scripts under `scripts/`. Keep `.env` private; it is excluded by `.gitignore`. Never commit or share the token.
 
-## Expand the catalogue to up to 500 verified Telugu films
+## Poster and data rights
 
-The TMDB sync discovers Telugu-original movies dynamically instead of relying on a short fixed candidate list. It sorts by popularity, paginates through TMDB results, fetches cast/director/genre metadata, checks that each movie's `original_language` is `te`, and verifies that the movie-specific poster URL returns image content. It stops after collecting the requested number of verified records or exhausting the available results. The final count can be below 500 when posters are unavailable.
+Film poster artwork, stills, and other third-party promotional materials remain the property of their respective rights holders. Their inclusion in this project does not transfer ownership or grant permission for commercial use, republication, or redistribution. Confirm the applicable rights and provider terms before reusing or deploying these assets publicly. The source-code licence does not automatically license third-party artwork.
 
-1. Copy `.env.example` to `.env`.
-2. Add your TMDB API Read Access Token to `TMDB_READ_ACCESS_TOKEN` in `.env`. Keep `.env` private; it is ignored by Git. Never paste the token into chat or commit it.
-3. Install dependencies: `python -m pip install -r requirements.txt`.
-4. Generate a reviewable catalogue of up to 500 films: `python scripts/sync_verified_telugu_catalog.py --limit 500`.
-5. Inspect `data/movies_verified.csv` and `data/poster_exclusions.csv`.
-6. Only after reviewing, apply it: `python scripts/sync_verified_telugu_catalog.py --limit 500 --apply`.
-
-The script excludes records with missing poster paths, unavailable poster URLs, failed metadata lookups, duplicate titles, or a non-Telugu original language. The `--apply` option backs up the current dataset to `data/movies.before_verified_expansion.csv`. The existing Search by Hero / Explore by Hero interface uses the lead actor field generated from TMDB cast data, and the Pawan Kalyan shelf remains supported by the cast metadata.
-
-TMDB is an external data provider. This project is independent and is not endorsed by TMDB. Poster rights remain with their respective owners; follow TMDB's terms, attribution requirements and image-use policies before public distribution.
+Mana Cinema is an independent student project and is not affiliated with TMDB, film studios, actors, or other rights holders.
