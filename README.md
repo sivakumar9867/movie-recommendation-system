@@ -1,68 +1,101 @@
-# Mana Cinema - Telugu Movie Recommendation System
+# Mana Cinema — Telugu Film Club
 
-A content-based movie recommender for Telugu (Tollywood) films built with
-**Python, Pandas, Scikit-learn and Flask**.
+Mana Cinema is a Flask-based Telugu movie discovery and recommendation app. This version includes a catalogue of **500 Telugu films**, locally stored poster images, an editorial-style homepage, hero-based browsing, and a dedicated Pawan Kalyan fan shelf.
+
+## Homepage preview
+
+The featured three-star poster stage presents **Rangasthalam** (Ram Charan), **Gabbar Singh** (Pawan Kalyan), and **Baahubali 2: The Conclusion** (Prabhas).
+
+The Pawan Kalyan shelf contains 12 films from the catalogue. Screenshots in `screenshots/` show the existing desktop, mobile, and fan-shelf previews.
 
 ## Features
-- Three ways to get recommendations:
-  - **Movie only** - the 5 most similar films (click a poster or use the dropdown)
-  - **Genres only** - tap one or more genres, no movie needed; films are ranked by how many of
-    the selected genres they have
-  - **Movie + genres** - similar films, with movies in your chosen genres ranked higher
-- Tap-to-select genre buttons built from the genres in the dataset
-- Each result shows which of your genres it matches
-- Feature engineering from genres, overview, director and cast
-- TF-IDF vectors + cosine similarity
-- Poster images: generated local artwork out of the box, real HD posters optional (TMDB)
-- Responsive dark "gold" UI
+
+- Browse and search a 500-film Telugu catalogue.
+- Explore titles by lead actor using the hero filter.
+- Browse the Pawan Kalyan fan shelf.
+- Get content-based recommendations using movie genres, synopsis, director, and cast.
+- Discover films by selected genres or combine a selected movie with genre preferences.
+- Use locally stored poster files from `static/posters/`; the application does not need a TMDB token to run with the bundled catalogue.
+- Responsive homepage and movie browsing interface.
+
+## Run locally
+
+Python 3.10 or later is recommended.
+
+Create and activate a virtual environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and start the app:
+
+```powershell
+python -m pip install -r requirements.txt
+python app.py
+```
+
+Open <http://127.0.0.1:5000> in your browser.
+
+On macOS or Linux, activate the virtual environment with:
+
+```bash
+source .venv/bin/activate
+```
+
+## Recommendation approach
+
+The recommender combines each film's genres, synopsis, director, and cast into a text feature. `TfidfVectorizer` converts these features into vectors, and cosine similarity ranks related films.
+
+- **Movie recommendations:** rank films by content similarity to the selected title.
+- **Genre recommendations:** rank films by overlap with the selected genres.
+- **Combined recommendations:** apply a small ranking boost for selected genres while retaining the raw similarity score.
 
 ## Project structure
+
 ```text
-Mana_Cinema/
-├── app.py                      Flask app
-├── recommendation_engine.py    TF-IDF + cosine similarity engine
-├── generate_posters.py         creates local SVG poster art (offline)
-├── fetch_posters.py            downloads real HD posters from TMDB (optional)
-├── replace_movies.py           rebuilds data/movies.csv
+Mana-Movie/
+├── app.py
 ├── requirements.txt
-├── setup_windows.bat           one-time environment setup (creates ./venv)
-├── run_windows.bat             one-click run on Windows
-├── fetch_real_posters_windows.bat
-├── data/movies.csv
-├── templates/index.html
-└── static/posters/             poster images (.svg generated, .jpg real)
+├── data/
+│   └── movies.csv
+├── static/
+│   ├── style.css
+│   └── posters/          # 500 locally stored poster images
+├── templates/
+│   └── index.html
+├── scripts/
+│   ├── sync_verified_telugu_catalog.py
+│   └── download_verified_posters.py
+├── screenshots/
+├── tests/
+│   └── test_recommender.py
+├── requirements-dev.txt
+├── .env.example
+├── .gitignore
+└── LICENSE
 ```
 
-## Run it (Windows)
-Everything lives in this one folder - the Python environment (`venv`) is created inside it.
+## Tests
 
-1. Double-click **`run_windows.bat`**. The first time it creates `venv` and installs the packages (internet needed).
-2. Open http://127.0.0.1:5000
+Install development dependencies and run the test suite:
 
-Needs Python 3.10+ (https://www.python.org/downloads/ - tick "Add python.exe to PATH").
-
-**Manual / VS Code terminal:**
 ```powershell
-.\venv\Scripts\python.exe app.py
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
-## Real HD posters (optional)
-1. Create a free account at https://www.themoviedb.org and request an API key
-   (Settings -> API -> Developer).
-2. Windows: double-click `fetch_real_posters_windows.bat` and paste the key.
-   Or in a terminal:
-   ```powershell
-   $env:TMDB_API_KEY="your_key"
-   .\venv\Scripts\python.exe fetch_posters.py
-   ```
-3. Refresh the browser with Ctrl+F5. Any poster that is missing falls back to the generated art.
+The current test suite checks the 500-title catalogue, local poster files, the Pawan Kalyan shelf, recommendation behaviour, genre filtering, and title slug generation.
 
-Posters are the property of their owners; do not publish the downloaded JPGs.
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+## Optional catalogue refresh
 
-## How it works
-**Movie-based:** dataset -> preprocessing -> feature engineering (genres + overview + director + cast)
--> TF-IDF -> cosine similarity -> optional genre boost (+0.10 per matching genre) -> top-5 -> Flask interface.
+The bundled catalogue and local posters are already included, so a TMDB token is **not required** to run the application.
 
-**Genre-only:** selected genres -> count of matching genres per movie (ties broken by Jaccard
-similarity of the genre sets) -> top-5. The dataset has 31 films, so a rare genre may return fewer than 5.
+To refresh or regenerate catalogue data, copy `.env.example` to `.env` and add a TMDB API Read Access Token to `TMDB_READ_ACCESS_TOKEN`. Then run the relevant scripts under `scripts/`. Keep `.env` private; it is excluded by `.gitignore`. Never commit or share the token.
+
+## Poster and data rights
+
+Film poster artwork, stills, and other third-party promotional materials remain the property of their respective rights holders. Their inclusion in this project does not transfer ownership or grant permission for commercial use, republication, or redistribution. Confirm the applicable rights and provider terms before reusing or deploying these assets publicly. The source-code licence does not automatically license third-party artwork.
+
+Mana Cinema is an independent student project and is not affiliated with TMDB, film studios, actors, or other rights holders.
