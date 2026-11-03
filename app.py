@@ -1,52 +1,320 @@
-from flask import Flask, render_template, request
-from recommendation_engine import MovieRecommender
+"""Mana Cinema: a Telugu film discovery and recommendation app."""
+from __future__ import annotations
 
-app = Flask(__name__)
-recommender = MovieRecommender("data/movies.csv")
+from html import escape
+from pathlib import Path
+import re
+
+import pandas as pd
+from flask import Flask, abort, render_template, request, Response
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "data" / "movies.csv"
+REQUIRED_COLUMNS = {"title", "genres", "overview", "director", "cast", "poster_url", "poster_alt_url", "star", "year", "hero"}
 
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    recommendations = []
-    selected_movie = ""
-    selected_genres = []
-    selected_info = None
-    error = None
+def slugify(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", str(value).casefold()).strip("-")
 
-    if request.method == "POST":
-        selected_movie = request.form.get("movie", "")
-        selected_genres = request.form.getlist("genres")
 
-        selected_info = recommender.get_movie(selected_movie)
-        try:
-            if selected_movie:
-                # movie (+ optional genres boost)
-                recommendations = recommender.recommend(
-                    selected_movie,
-                    preferred_genres=selected_genres,
-                    top_n=5,
-                )
-            elif selected_genres:
-                # genres only
-                recommendations = recommender.recommend_by_genres(
-                    selected_genres, top_n=5
-                )
-            else:
-                error = "Pick a movie, one or more genres, or both."
-        except ValueError as exc:
-            error = str(exc)
+def generated_poster_svg(movie: dict) -> bytes:
+    'Create a complete, standalone local poster for any catalogue title.'
+    genres = movie.get("genres", [])
+    if isinstance(genres, str):
+        genres = [part.strip() for part in genres.split("|") if part.strip()]
+    palette = {
+        "Action": ("#e45c43", "#272341", "#f6c76e"),
+        "Romance": ("#d98d8f", "#254c59", "#f8e7c8"),
+        "Comedy": ("#f0b74d", "#b94f39", "#f9e7b3"),
+        "Drama": ("#49758a", "#162b49", "#eac27a"),
+        "Thriller": ("#758b73", "#172d39", "#e6ac70"),
+        "Fantasy": ("#7962a1", "#182b4d", "#f2ce83"),
+    }
+    c1, c2, accent = palette.get(genres[0] if genres else "Drama", ("#49758a", "#162b49", "#eac27a"))
+    title_raw = str(movie.get("title", "MANA CINEMA"))
+    title = escape(title_raw)
+    director = escape(str(movie.get("director", "Telugu cinema")))
+    genre_text = escape(" / ".join(genres[:3]))
+    year = escape(str(movie.get("year", "")))
+    is_power_star = str(movie.get("star", "")).casefold() == "pawan kalyan"
 
-    return render_template(
-        "index.html",
-        movies=recommender.get_movie_titles(),
-        genres=recommender.get_genres(),
-        recommendations=recommendations,
-        selected_movie=selected_movie,
-        selected_info=selected_info,
-        selected_genres=selected_genres,
-        error=error,
+    words = title_raw.split()
+    lines, current = [], ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if len(candidate) > 15 and current:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    lines = lines[:3]
+    title_svg = "".join(
+        f'<text x="200" y="{318 + i * 43}" text-anchor="middle" font-family="Georgia,serif" font-size="{33 if len(line) < 13 else 26}" font-weight="700" letter-spacing="1" fill="#fff5e8">{escape(line.upper())}</text>'
+        for i, line in enumerate(lines)
     )
 
+    if is_power_star:
+        centerpiece = f'''<circle cx="200" cy="205" r="82" fill="none" stroke="{accent}" stroke-width="2" opacity=".9"/>
+<circle cx="200" cy="205" r="68" fill="{accent}" opacity=".12"/>
+<path d="M200 112 L217 176 L280 160 L236 207 L280 252 L217 237 L200 300 L183 237 L120 252 L164 207 L120 160 L183 176Z" fill="none" stroke="{accent}" stroke-width="2" opacity=".62"/>
+<text x="200" y="220" text-anchor="middle" font-family="Georgia,serif" font-size="49" font-weight="700" fill="{accent}">PK</text>
+<text x="200" y="271" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" letter-spacing="4" fill="#fff5e8">POWER STAR</text>'''
+        collection_label = "POWER STAR COLLECTION"
+    else:
+        centerpiece = f'''<circle cx="200" cy="205" r="86" fill="{accent}" opacity=".12"/>
+<circle cx="200" cy="205" r="67" fill="none" stroke="{accent}" stroke-width="1.5" opacity=".75"/>
+<path d="M200 135 L216 185 L268 185 L226 216 L242 267 L200 236 L158 267 L174 216 L132 185 L184 185Z" fill="{accent}" opacity=".7"/>
+<circle cx="200" cy="205" r="13" fill="#fff4dd" opacity=".9"/>'''
+        collection_label = "TELUGU FILM COLLECTION"
+
+    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" role="img" aria-label="Illustrated local poster for {title}">
+<defs>
+  <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{c1}"/><stop offset="1" stop-color="{c2}"/></linearGradient>
+  <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101820" stop-opacity="0"/><stop offset="1" stop-color="#101820" stop-opacity=".92"/></linearGradient>
+  <pattern id="grain" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="3" cy="4" r=".8" fill="#fff" opacity=".13"/><circle cx="16" cy="15" r=".6" fill="#fff" opacity=".1"/></pattern>
+</defs>
+<rect width="400" height="600" fill="url(#paper)"/>
+<circle cx="323" cy="100" r="150" fill="{accent}" opacity=".12"/>
+<path d="M-30 440 L85 330 L170 405 L277 290 L440 435 L440 620 L-30 620Z" fill="#0b1d2a" opacity=".3"/>
+<rect width="400" height="600" fill="url(#grain)"/><rect width="400" height="600" fill="url(#fade)"/>
+<rect x="15" y="15" width="370" height="570" fill="none" stroke="#fff4e5" stroke-opacity=".65" stroke-width="2"/>
+<text x="200" y="63" text-anchor="middle" fill="#fff2dc" font-family="Arial,sans-serif" font-size="12" letter-spacing="5">MANA CINEMA</text>
+<text x="200" y="88" text-anchor="middle" fill="#fff2dc" font-family="Arial,sans-serif" font-size="8" letter-spacing="2">{collection_label}</text>
+<path d="M145 111 H255" stroke="{accent}" stroke-width="2"/>
+{centerpiece}
+{title_svg}
+<text x="200" y="493" text-anchor="middle" fill="#fff2dc" font-family="Arial,sans-serif" font-size="13">{genre_text}</text>
+<text x="200" y="520" text-anchor="middle" fill="#fff2dc" opacity=".85" font-family="Arial,sans-serif" font-size="10">DIR. {director.upper()}</text>
+<text x="200" y="551" text-anchor="middle" fill="{accent}" font-family="Arial,sans-serif" font-size="11" letter-spacing="3">{year}</text>
+</svg>'''
+    return svg.encode("utf-8")
+
+class MovieRecommender:
+    """TF-IDF/cosine similarity over a curated Telugu film catalogue."""
+
+    def __init__(self, data_path: Path = DATA_PATH):
+        if not data_path.is_file():
+            raise FileNotFoundError(f"Movie dataset not found: {data_path}")
+        movies = pd.read_csv(data_path, encoding="utf-8-sig").fillna("")
+        missing = REQUIRED_COLUMNS - set(movies.columns)
+        if missing:
+            raise ValueError(f"Dataset is missing columns: {', '.join(sorted(missing))}")
+        for column in ("title", "genres", "overview", "director", "cast", "poster_url", "poster_alt_url", "star", "year", "hero"):
+            movies[column] = movies[column].astype(str).str.strip()
+        # Pandas infers numeric years as floats when older rows are blank;
+        # normalize values so cards display 2001 rather than 2001.0.
+        def clean_year(value):
+            if not value or value.casefold() in {"nan", "none"}:
+                return ""
+            try:
+                number = float(value)
+                return str(int(number)) if number.is_integer() else value
+            except (TypeError, ValueError):
+                return value
+        movies["year"] = movies["year"].map(clean_year)
+        movies = movies[movies["title"] != ""].reset_index(drop=True)
+        if movies.empty or movies["title"].duplicated().any():
+            raise ValueError("The catalogue must contain unique, non-empty movie titles.")
+        movies["features"] = movies.apply(self._features, axis=1)
+        self.movies = movies
+        self.vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2))
+        self.matrix = self.vectorizer.fit_transform(movies["features"])
+        self.similarity = cosine_similarity(self.matrix)
+        self.index = {title: i for i, title in enumerate(movies["title"])}
+        self.genres = sorted({g for value in movies["genres"] for g in self.split_genres(value)})
+
+    @staticmethod
+    def split_genres(value):
+        return [part.strip() for part in str(value).split("|") if part.strip()]
+
+    @classmethod
+    def _features(cls, row):
+        return " ".join([
+            " ".join(cls.split_genres(row["genres"])),
+            str(row["overview"]),
+            " ".join(cls.split_genres(row["director"])),
+            " ".join(cls.split_genres(row["cast"])),
+        ]).strip()
+
+    @property
+    def movie_count(self):
+        return len(self.movies)
+
+    def movie_info(self, row):
+        return {
+            "title": row["title"],
+            "slug": slugify(row["title"]),
+            "genres": self.split_genres(row["genres"]),
+            "director": row["director"] or "Not listed",
+            "overview": row["overview"] or "No synopsis available.",
+            "poster_url": row["poster_url"],
+            "poster_alt_url": row["poster_alt_url"],
+            "star": row["star"],
+            "hero": row["hero"] or "Ensemble",
+            "year": row["year"],
+        }
+
+    def get_movie(self, title):
+        index = self.index.get(title)
+        return self.movie_info(self.movies.iloc[index]) if index is not None else None
+
+    def all_movies(self):
+        return [self.movie_info(self.movies.iloc[i]) for i in sorted(range(len(self.movies)), key=lambda n: self.movies.iloc[n]["title"].casefold())]
+
+    def power_star_movies(self):
+        rows = self.movies[self.movies["star"].str.casefold() == "pawan kalyan" ]
+        return [self.movie_info(row) for _, row in rows.iterrows()]
+
+    def recommend(self, title, preferred_genres=None, top_n=6):
+        if title not in self.index:
+            raise ValueError("Choose a movie from the catalogue.")
+        preferred = set(preferred_genres or [])
+        unknown = preferred - set(self.genres)
+        if unknown:
+            raise ValueError(f"Unknown genres: {', '.join(sorted(unknown))}")
+        source = self.index[title]
+        results = []
+        for idx, score in enumerate(self.similarity[source]):
+            if idx == source:
+                continue
+            info = self.movie_info(self.movies.iloc[idx])
+            matched = sorted(set(info["genres"]) & preferred)
+            info.update({"matched_genres": matched, "similarity": float(score), "ranking_score": float(score + .10 * len(matched))})
+            results.append(info)
+        results.sort(key=lambda x: (-x["ranking_score"], -x["similarity"], x["title"].casefold()))
+        return results[:top_n]
+
+    def recommend_by_genres(self, genres, top_n=6):
+        selected = set(genres or [])
+        if not selected:
+            raise ValueError("Choose at least one genre.")
+        unknown = selected - set(self.genres)
+        if unknown:
+            raise ValueError(f"Unknown genres: {', '.join(sorted(unknown))}")
+        results = []
+        for _, row in self.movies.iterrows():
+            info = self.movie_info(row)
+            matched = sorted(set(info["genres"]) & selected)
+            if not matched:
+                continue
+            union = set(info["genres"]) | selected
+            info.update({"matched_genres": matched, "genre_coverage": len(matched) / len(selected), "ranking_score": len(matched) + len(matched) / len(union), "similarity": 0.0})
+            results.append(info)
+        results.sort(key=lambda x: (-x["ranking_score"], x["title"].casefold()))
+        return results[:top_n]
+
+
+def create_app(test_config=None):
+    app = Flask(__name__)
+    if test_config:
+        app.config.update(test_config)
+    recommender = MovieRecommender()
+    app.extensions["recommender"] = recommender
+    by_slug = {slugify(title): recommender.get_movie(title) for title in recommender.index}
+
+    def select_stage_movie(hero_name, preferred_titles):
+        """Pick a featured actor film whose poster is present in the local project."""
+        movies = recommender.movies
+        hero_values = movies["hero"].fillna("").astype(str).str.casefold()
+        actor_rows = movies[hero_values.str.contains(re.escape(hero_name.casefold()), na=False)].copy()
+        preferred_rows = actor_rows if not actor_rows.empty else movies
+
+        def title_key(value):
+            return re.sub(r"[^a-z0-9]+", "", str(value).casefold())
+
+        def has_local_poster(row):
+            raw = str(row.get("poster_url", "")).strip()
+            if not raw or raw.casefold() in {"nan", "none"} or raw.startswith(("http://", "https://")):
+                return False
+            relative = raw.lstrip("/")
+            if relative.startswith("static/"):
+                poster_path = BASE_DIR / relative
+            elif relative.startswith("posters/"):
+                poster_path = BASE_DIR / "static" / relative
+            else:
+                poster_path = BASE_DIR / relative
+            return poster_path.is_file()
+
+        wanted = {title_key(title): title for title in preferred_titles}
+        for _, row in preferred_rows.iterrows():
+            if title_key(row["title"]) in wanted and has_local_poster(row):
+                return recommender.movie_info(row)
+        for _, row in preferred_rows.iterrows():
+            if has_local_poster(row):
+                return recommender.movie_info(row)
+        return None
+
+    @app.get("/poster-art/<slug>.svg")
+    def poster_art(slug):
+        if not re.fullmatch(r"[a-z0-9-]+", slug):
+            abort(404)
+        movie = by_slug.get(slug)
+        if movie is None:
+            abort(404)
+        # A standalone SVG is generated for every catalogue title. No sprite
+        # dependencies, broken fragments, external requests or missing artwork.
+        content = generated_poster_svg(movie)
+        response = Response(content, mimetype="image/svg+xml")
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok", "movies": recommender.movie_count, "pawan_kalyan_films": len(recommender.power_star_movies())}
+
+    @app.route("/", methods=["GET", "POST"])
+    def index():
+        selected_movie = ""
+        selected_genres = []
+        selected_info = None
+        recommendations = []
+        error = None
+        mode = "browse"
+        if request.method == "POST":
+            selected_movie = request.form.get("movie", "").strip()
+            selected_genres = list(dict.fromkeys(x.strip() for x in request.form.getlist("genres") if x.strip()))
+            selected_info = recommender.get_movie(selected_movie) if selected_movie else None
+            try:
+                if selected_movie:
+                    mode = "combined" if selected_genres else "movie"
+                    recommendations = recommender.recommend(selected_movie, selected_genres)
+                elif selected_genres:
+                    mode = "genres"
+                    recommendations = recommender.recommend_by_genres(selected_genres)
+                else:
+                    error = "Choose a movie, select one or more genres, or combine both."
+            except ValueError as exc:
+                error = str(exc)
+        return render_template(
+            "index.html",
+            movies=recommender.all_movies(),
+            movie_titles=sorted(recommender.index, key=str.casefold),
+            genres=recommender.genres,
+            movie_count=recommender.movie_count,
+            power_star_movies=recommender.power_star_movies(),
+            # Three-film hero showcase: Ram Charan left, Pawan Kalyan centre, Prabhas right.
+            stage_movies={
+                "ram_charan": select_stage_movie("Ram Charan", ["Rangasthalam", "Magadheera", "RRR", "Dhruva", "Game Changer"]),
+                "pawan_kalyan": select_stage_movie("Pawan Kalyan", ["Gabbar Singh"]),
+                "prabhas": recommender.get_movie("Saaho") or select_stage_movie("Prabhas", ["Salaar: Part 1 - Ceasefire", "Mirchi", "Darling", "Kalki 2898-AD"]),
+            },
+            heroes=sorted({str(value).strip() for value in recommender.movies["hero"] if str(value).strip()}, key=str.casefold),
+            selected_movie=selected_movie,
+            selected_genres=selected_genres,
+            selected_info=selected_info,
+            recommendations=recommendations,
+            mode=mode,
+            error=error,
+        )
+    return app
+
+
+app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=False)
